@@ -1,0 +1,11 @@
+services:
+  bot:
+    build: .
+    container_name: naspi_bot
+    restart: always
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    environment:
+      - DISCORD_TOKEN=your_discord_bot_token_here
+      - DISCORD_CHANNEL_ID=your_discord_channel_id_here

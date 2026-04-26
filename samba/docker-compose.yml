@@ -1,0 +1,21 @@
+services:
+  samba:
+    image: dperson/samba
+    container_name: naspi_samba
+    restart: always
+    network_mode: "host"
+#    ports:
+#      - "139":"139"
+#      - "445":"445"
+    environment:
+      - USERID=1000
+      - GROUPID=1000
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./smb.conf:/etc/samba/smb.conf:ro
+      - /mnt/data/cloud:/mnt/pd_sync
+      - /mnt/data/local:/mnt/local
+    command: >
+      -u "user;password"
+      -s "Cloud-Sync;/mnt/pd_sync;yes;no;no;user"
+      -s "Local-NAS;/mnt/local;yes;no;no;user"
