@@ -1,12 +1,10 @@
-FROM python:3.9-slim
+FROM node:20-slim
 
 WORKDIR /app
 
-ENV TZ=Asia/Tokyo
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY package*.json ./
+RUN npm install
 
 COPY . .
 
-CMD ["python", "discord-bot.py"]
+CMD ["npm", "js/main.js"]

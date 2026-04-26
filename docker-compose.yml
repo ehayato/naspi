@@ -1,0 +1,94 @@
+# Common service settings
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+
+services:
+  # DiscordBot
+  bot:
+    <<: *service-defaults
+    build: ./bot
+    container_name: naspi_bot
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - CH_COCKPIT=${CH_COCKPIT}
+      - CH_STATUS=${CH_STATUS}
+      - CH_CLOUD=${CH_CLOUD}
+      - CH_BACKUP=${CH_BACKUP}
+      - CH_ERROR=${CH_ERROR}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # Samba
+  samba:
+    <<: *service-defaults
+    image: dperson/samba
+    container_name: naspi_samba
+    network_mode: "host"
+    environment:
+      - USERID=1000
+      - GROUPID=1000
+      - SAMBA_USER=${SAMBA_USER}
+      - SAMBA_PASSWORD=${SAMBA_PASSWORD}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./samba/smb.conf:/etc/samba/smb.conf:ro
+      - ${DATA_CLOUD}:/mnt/pd_sync
+      - ${DATA_LOCAL}:/mnt/local
+    command: >
+      -u "${SAMBA_USER};${SAMBA_PASSWORD}"
+      -s "Cloud-Sync;/mnt/pd_sync;yes;no;no;${SAMBA_USER}"
+      -s "Local-NAS;/mnt/local;yes;no;no;${SAMBA_USER}"
+
+  # rclone-sync (Cloud Sync)
+  rclone-sync:
+    <<: *service-defaults
+    image: rclone/rclone:latest
+    container_name: naspi_rclone
+    environment:
+      - TZ=Asia/Tokyo
+      - RCLONE_CONFIG=${RCLONE_CONFIG}
+    volumes:
+      - ${DATA_CLOUD}:/data
+      - ./rclone:/config/rclone
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["while true; do rclone sync /data remote:protondrive --config $RCLONE_CONFIG; sleep 3600; done"]
+
+  # restic-backup (Versioned Backup)
+  restic-backup:
+    <<: *service-defaults
+    image: restic/restic:latest
+    container_name: naspi_restic
+    environment:
+      - TZ=Asia/Tokyo
+      - RESTIC_PASSWORD=${RESTIC_PASSWORD}
+    volumes:
+      - ${DATA_CLOUD}:/data:ro
+      - ${DATA_HDD}:/backup
+      - ./restic:/config
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["restic -r /backup/repo backup /data && restic -r /backup/repo forget --prune --keep-daily 7 --keep-weekly 4"]
+
+  # Immich (Photo Management)
+  immich:
+    <<: *service-defaults
+    image: ghcr.io/immich-app/immich-server:latest
+    container_name: naspi_immich
+    environment:
+      - TZ=Asia/Tokyo
+    volumes:
+      - ${PHOTO_UPLOAD}:/usr/src/app/upload
+    ports:
+      - "2283:2283"
+    depends_on:
+      - immich-db
+
+  immich-db:
+    <<: *service-defaults
+    image: postgres:15
+    container_name: naspi_immich_db
+    environment:
+      - POSTGRES_PASSWORD=immichpassword
+      - POSTGRES_USER=immich
+      - POSTGRES_DB=immich
+    volumes:
+      - ${IMMICH_DB}:/var/lib/postgresql/data
