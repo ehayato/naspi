@@ -1,7 +1,7 @@
 const { Client, GatewayIntentBits, EmbedBuilder, Events } = require('discord.js');
 require('dotenv').config();
 
-const { COLORS } = require('./constants');
+const { COLORS } = require('./core/constants');
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const CH_STATUS = process.env.CH_STATUS;
