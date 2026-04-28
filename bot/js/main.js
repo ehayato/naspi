@@ -55,7 +55,7 @@ function setupMessageHandler(client) {
     if (message.content === '!colors') {
       const embeds = Object.entries(COLORS).map(([name, color]) => {
         return new EmbedBuilder()
-          .setTitle(`${name} Color Check`)
+          .setTitle(name)
           .setColor(color)
           .setDescription(`Hex: ${color}\nRGB: ${hexToRgb(color)}`)
           .setTimestamp();

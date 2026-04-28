@@ -7,4 +7,4 @@ RUN npm install
 
 COPY . .
 
-CMD ["npm", "js/main.js"]
+CMD ["node", "js/main.js"]

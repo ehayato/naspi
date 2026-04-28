@@ -1,4 +1,5 @@
 const COLORS = {
+  DEFAULT:  "#7f7f7f",
   COCKPIT:  "#8843E1",
   ONLINE:   "#3460FB",
   INFO:     "#57B8FF",
