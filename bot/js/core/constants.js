@@ -1,3 +1,25 @@
+const isDev = process.env.NODE_ENV === 'development';
+
+const DevelopmentChannels = {
+  COCKPIT: process.env.DEV_CH_COCKPIT,
+  STATUS: process.env.DEV_CH_STATUS,
+  CLOUD: process.env.DEV_CH_CLOUD,
+  BACKUP: process.env.DEV_CH_BACKUP,
+  ERROR: process.env.DEV_CH_ERROR,
+  TEST: process.env.DEV_CH_TEST
+}
+const ProductionChannels = {
+  COCKPIT: process.env.PROD_CH_COCKPIT,
+  STATUS: process.env.PROD_CH_STATUS,
+  CLOUD: process.env.PROD_CH_CLOUD,
+  BACKUP: process.env.PROD_CH_BACKUP,
+  ERROR: process.env.PROD_CH_ERROR,
+  TEST: '' // 本番ではテストチャンネルを使用しない
+}
+
+// 本番チャンネルを汚さないためにNODE_ENVでチャンネルIDを切り替える
+const CHANNELS = isDev ? DevelopmentChannels : ProductionChannels;
+
 const COLORS = {
   DEFAULT:  "#7f7f7f",
   COCKPIT:  "#8843E1",
