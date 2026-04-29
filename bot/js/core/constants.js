@@ -5,7 +5,7 @@ const DevelopmentChannels = {
   STATUS: process.env.DEV_CH_STATUS,
   CLOUD: process.env.DEV_CH_CLOUD,
   BACKUP: process.env.DEV_CH_BACKUP,
-  ERROR: process.env.DEV_CH_ERROR,
+  LOG: process.env.DEV_CH_LOG,
   TEST: process.env.DEV_CH_TEST
 }
 const ProductionChannels = {
@@ -13,7 +13,7 @@ const ProductionChannels = {
   STATUS: process.env.PROD_CH_STATUS,
   CLOUD: process.env.PROD_CH_CLOUD,
   BACKUP: process.env.PROD_CH_BACKUP,
-  ERROR: process.env.PROD_CH_ERROR,
+  LOG: process.env.PROD_CH_LOG,
   TEST: '' // 本番ではテストチャンネルを使用しない
 }
 
@@ -32,5 +32,7 @@ const COLORS = {
 };
 
 module.exports = {
-  COLORS
+  COLORS,
+  CHANNELS,
+  isDev
 };

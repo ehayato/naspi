@@ -7,7 +7,7 @@ class CustomEmbedBuilder {
   constructor() {
     this.embedData = {
       title: 'unset',
-      desc: 'unset',
+      description: 'unset',
       color: COLORS.DEFAULT,
       fields: []
     };
@@ -18,8 +18,8 @@ class CustomEmbedBuilder {
     this.embedData.title = title;
     return this;
   }
-  setDes(desc){
-    this.embedData.desc = desc;
+  setDescription(description){
+    this.embedData.description = description;
     return this;
   }
   setColor(color){
@@ -31,7 +31,7 @@ class CustomEmbedBuilder {
   build(){
     return new EmbedBuilder()
       .setTitle(this.embedData.title)
-      .setDescription(this.embedData.desc)
+      .setDescription(this.embedData.description)
       .setColor(this.embedData.color)
       .addFields(this.embedData.fields)
       .setTimestamp();

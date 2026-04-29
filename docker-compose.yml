@@ -9,12 +9,21 @@ services:
     build: ./bot
     container_name: naspi_bot
     environment:
+      - NODE_ENV=${NODE_ENV}
       - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - CH_COCKPIT=${CH_COCKPIT}
-      - CH_STATUS=${CH_STATUS}
-      - CH_CLOUD=${CH_CLOUD}
-      - CH_BACKUP=${CH_BACKUP}
-      - CH_ERROR=${CH_ERROR}
+      # 開発チャンネル
+      - DEV_CH_COCKPIT=${DEV_CH_COCKPIT}
+      - DEV_CH_STATUS=${DEV_CH_STATUS}
+      - DEV_CH_CLOUD=${DEV_CH_CLOUD}
+      - DEV_CH_BACKUP=${DEV_CH_BACKUP}
+      - DEV_CH_LOG=${DEV_CH_LOG}
+      - DEV_CH_TEST=${DEV_CH_TEST}
+      # 本番チャンネル
+      - PROD_CH_COCKPIT=${PROD_CH_COCKPIT}
+      - PROD_CH_STATUS=${PROD_CH_STATUS}
+      - PROD_CH_CLOUD=${PROD_CH_CLOUD}
+      - PROD_CH_BACKUP=${PROD_CH_BACKUP}
+      - PROD_CH_LOG=${PROD_CH_LOG}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 

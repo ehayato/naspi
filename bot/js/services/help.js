@@ -1,21 +1,21 @@
-const CustomEmbedBuilder = require('../core/embedBuilder');
+const { CustomEmbedBuilder } = require('../core/embedBuilder');
 
 async function runHelp(interaction, allCommands) {
-  const commandList = allCommands.map(cmd => {
-    return `**/${cmd.data.name}**: ${cmd.data.desc}`;
+  const commandList = Object.values(allCommands).map(cmd => {
+    return `**/${cmd.data.name}**: ${cmd.data.description}`;
   }).join('\n');
 
-  const embed = new CustomEmbedBuilder()
+  const embeds = new CustomEmbedBuilder()
     .setTitle('📝 利用可能なコマンド一覧')
-    .setDesc(commandList)
+    .setDescription(commandList)
     .build();
   
   await interaction.reply({
-    embeds: [embed],
+    embeds: [embeds],
     ephemeral: true
   });
 }
 
-module.exports = {
+module.exports = {  
   run: runHelp
 };
