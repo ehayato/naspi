@@ -1,5 +1,5 @@
-const { COLORS, isDev } = require("./constants");
-const { CustomEmbedBuilder } = require("./embedBuilder");
+const { COLORS, isDev } = require("../constants");
+const { CustomEmbedBuilder } = require("../embedBuilder");
 
 async function service(CLIENT, CHANNEL) {
   console.log(`\nBot is ready! Logged in as ${CLIENT.user.tag}\n`);
@@ -18,10 +18,10 @@ async function service(CLIENT, CHANNEL) {
   try{
     await CHANNEL.send({ embeds: [embed.build()] });
   } catch (e) {
-    console.error(`\nHello Error:\n${e}\n`);
+    console.error(`\nhello.js\n${e}\n`);
   }
 }
 
 module.exports = {
-  run: service
+  service
 };

@@ -10,12 +10,12 @@ const serviceFiles = fs.readdirSync(servicesPath).filter(file => file.endsWith('
 for (const file of serviceFiles) {
   const command = require(path.join(servicesPath, file));
 
-  if (command.data && typeof command.run === 'function') {
+  if (command.data && typeof command.service === 'function') {
     commands[command.data.name] = command;
 
     console.log(`✅ Success: "/${command.data.name}" command loaded.`);
   } else {
-    console.warn(`⚠️ Error: "${file}" is missing 'data' or 'run' export.`);
+    console.warn(`⚠️ Error: "${file}" is missing 'data' or 'service' export.`);
   }
 }
 

@@ -28,5 +28,5 @@ async function service(interaction, allCommands) {
 
 module.exports = {
   data,
-  run: service
+  service
 };

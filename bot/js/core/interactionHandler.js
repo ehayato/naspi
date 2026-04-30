@@ -1,7 +1,7 @@
 const commands = require('./commands');
-const errorService = require('./error');
+const errorService = require('./services/error');
 
-async function handleInteraction(interaction) {
+async function handleInteraction(interaction, CHANNELS) {
   let command;
   let commandName = '';
 
@@ -23,7 +23,7 @@ async function handleInteraction(interaction) {
   if (!command) {
     console.warn('Unknown interaction:', commandName);
 
-    await errorService.run(
+    await errorService.service(
       interaction, 
       '\`${commandName}\` というコマンドは登録されていないか、利用できません。'
     );
@@ -32,14 +32,15 @@ async function handleInteraction(interaction) {
   }
 
   try {
-    await command.run(interaction, commands);
+    await command.service(interaction, commands, CHANNELS);
   } catch (error) {
-    // console.error(error);
+    console.error(`\ninteractionHandler.js\n${error}\n`);
 
-    await errorService.run(
+    await errorService.service(
       interaction, 
       'コマンドの実行中にエラーが発生しました。ログを確認してください。',
-      error
+      error,
+      CHANNELS
     );
 
     return;

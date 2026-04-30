@@ -35,5 +35,5 @@ async function service(interaction) {
 
 module.exports = {
   data,
-  run: service
+  service
 };
