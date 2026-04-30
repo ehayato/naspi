@@ -1,10 +1,10 @@
 const { Client, GatewayIntentBits, EmbedBuilder, Events } = require('discord.js');
 require('dotenv').config();
 
-const { COLORS, CHANNELS, isDev } = require('./core/constants');
-const { handleInteraction } = require('./handlers/interactionHandler');
-
 const TOKEN = process.env.DISCORD_TOKEN;
+const { COLORS, tempCHANNELS } = require('./core/constants');
+const { handleInteraction } = require('./core/interactionHandler');
+const hello = require('./core/hello');
 
 function createClient() {
   return new Client({
@@ -16,33 +16,23 @@ function createClient() {
   });
 }
 
-async function notifyReady(client) {
-  console.log(`Logged in as ${client.user.tag}!`);
-  try {
-    const channel = await client.channels.fetch(CHANNELS.STATUS).catch(() => null);
-    if (channel && channel.isTextBased()) {
-      const readyEmbed = new EmbedBuilder()
-        .setColor(COLORS.ONLINE)
-        .setTitle('🚀 Naspi System Online')
-        .setDescription('サーバー管理BOTがオンラインになりました！')
-        .addFields(
-          { name: 'Environment', value: 'Node.js on Docker', inline: true },
-          { name: 'Status', value: 'Online / System Ready.', inline: true },
-          { name: 'Mode', value: isDev ? 'Development' : 'Production', inline: true  },
-        )
-        .setTimestamp();
-      await channel.send({ embeds: [readyEmbed] });
-    } else {
-      console.error('Status channel not found or not text-based');
+async function resolveChannels(client, tempChannels) {
+  const resolved = {};
+  for (const [key, channelId] of Object.entries(tempChannels)) {
+    if (channelId) {
+      resolved[key] = await client.channels.fetch(channelId).catch(() => null);
     }
-  } catch (err) {
-    console.error('notifyReady error:', err);
   }
+  return resolved;
 }
 
 function main() {
   const client = createClient();
-  client.once(Events.ClientReady, () => notifyReady(client));
+
+  client.once(Events.ClientReady, async () => {
+    const CHANNEL = await resolveChannels(client, tempCHANNELS);
+    hello.run(client, CHANNEL.STATUS);
+  });
 
   client.on(Events.InteractionCreate, async (interaction) => {
     await handleInteraction(interaction);

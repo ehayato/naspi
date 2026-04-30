@@ -22,7 +22,7 @@ async function deployCommands() {
       ),
       { body: commandData },
     );
-
+    
     console.log(`✅ 登録完了！ ${data.length} 個のコマンドが登録されました。`);
   } catch (error) {
     console.error("❌ 登録中にエラーが発生：", error);

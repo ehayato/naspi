@@ -1,6 +1,16 @@
 const { CustomEmbedBuilder } = require('../core/embedBuilder');
 
-async function runHelp(interaction, allCommands) {
+const data = {
+  name: 'help',
+  description: '利用可能なコマンド一覧を表示します',
+  button: {
+    label: 'ヘルプ',
+    emoji: '❓',
+    style: 'PRIMARY'
+  }
+}
+
+async function service(interaction, allCommands) {
   const commandList = Object.values(allCommands).map(cmd => {
     return `**/${cmd.data.name}**: ${cmd.data.description}`;
   }).join('\n');
@@ -16,6 +26,7 @@ async function runHelp(interaction, allCommands) {
   });
 }
 
-module.exports = {  
-  run: runHelp
+module.exports = {
+  data,
+  run: service
 };

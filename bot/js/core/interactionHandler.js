@@ -1,5 +1,5 @@
-const commands = require('../core/commands');
-const errorService = require('../services/error');
+const commands = require('./commands');
+const errorService = require('./error');
 
 async function handleInteraction(interaction) {
   let command;
@@ -32,9 +32,9 @@ async function handleInteraction(interaction) {
   }
 
   try {
-    await command.execute(interaction, commands);
+    await command.run(interaction, commands);
   } catch (error) {
-    console.error(error);
+    // console.error(error);
 
     await errorService.run(
       interaction, 

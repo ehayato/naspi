@@ -33,6 +33,6 @@ const COLORS = {
 
 module.exports = {
   COLORS,
-  CHANNELS,
+  tempCHANNELS: CHANNELS,
   isDev
 };

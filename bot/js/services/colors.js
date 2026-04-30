@@ -1,6 +1,16 @@
 const { CustomEmbedBuilder } = require("../core/embedBuilder");
 const { COLORS } = require("../core/constants");
 
+const data = {
+  name: 'colors',
+  description: '利用可能なカラーコードを表示します',
+  button: {
+    label: 'カラーコード',
+    emoji: '🎨',
+    style: 'PRIMARY'
+  }
+}
+
 function hexToRgb(hex) {
   const s = String(hex || '').replace('#', '');
   if (s.length !== 6) return '';
@@ -10,7 +20,7 @@ function hexToRgb(hex) {
   return `${r}, ${g}, ${b}`;
 }
 
-async function runColors(interaction) {
+async function service(interaction) {
   const embeds = Object.entries(COLORS).map(([name, color]) => {
     return new CustomEmbedBuilder()
       .setTitle(name)
@@ -24,5 +34,6 @@ async function runColors(interaction) {
 }
 
 module.exports = {
-  run: runColors
+  data,
+  run: service
 };

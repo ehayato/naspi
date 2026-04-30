@@ -1,5 +1,5 @@
-const { CustomEmbedBuilder } = require('../core/embedBuilder');
-const { COLORS, CHANNELS } = require('../core/constants');
+const { CustomEmbedBuilder } = require('./embedBuilder');
+const { COLORS, CHANNELS } = require('./constants');
 
 async function runError(interaction, message, rawError = null) {
   // ユーザー向けのエラーメッセージを作成
@@ -39,9 +39,14 @@ async function runError(interaction, message, rawError = null) {
           name: '👤 User Info', 
           value: `ID: ${interaction.user.id}\nTag: ${interaction.user.tag}` });
       }
-      await logChannel.send({ 
-        embeds: [logEmbed.build()]
-      });
+
+      try {
+        await logChannel.send({ 
+          embeds: [logEmbed.build()]
+        });
+      } catch (logError) {
+        console.error(`\n${logError}\n`);
+      }
     }
   }
 }
