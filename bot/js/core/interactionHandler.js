@@ -25,7 +25,7 @@ async function handleInteraction(interaction, CHANNELS) {
 
     await errorService.service(
       interaction, 
-      '\`${commandName}\` というコマンドは登録されていないか、利用できません。'
+      `\`${commandName}\` というコマンドは登録されていないか、利用できません。`
     );
 
     return;
@@ -37,7 +37,7 @@ async function handleInteraction(interaction, CHANNELS) {
     console.error(`\ninteractionHandler.js\n${error}\n`);
 
     await errorService.service(
-      interaction, 
+      interaction,
       'コマンドの実行中にエラーが発生しました。ログを確認してください。',
       error,
       CHANNELS

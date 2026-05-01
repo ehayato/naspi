@@ -3,8 +3,10 @@ require('dotenv').config();
 
 const TOKEN = process.env.DISCORD_TOKEN;
 const { COLORS, tempCHANNELS } = require('./core/constants');
+const COMMANDS = require('./core/commands');
 const { handleInteraction } = require('./core/interactionHandler');
-const hello = require('./core/services/hello');
+const HELLO = require('./core/services/hello');
+const CONTROL_PANEL = require('./core/services/controlPanel');
 
 function createClient() {
   return new Client({
@@ -32,7 +34,11 @@ function main() {
 
   client.once(Events.ClientReady, async () => {
     Object.assign(CHANNELS, await resolveChannels(client, tempCHANNELS));
-    hello.service(client, CHANNELS.STATUS);
+    HELLO.service(client, CHANNELS.STATUS);
+
+    if(CHANNELS.COCKPIT) {
+      CONTROL_PANEL.service(CHANNELS.COCKPIT, COMMANDS);
+    }
   });
 
   client.on(Events.InteractionCreate, async (interaction) => {

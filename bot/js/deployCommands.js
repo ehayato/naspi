@@ -5,11 +5,13 @@
 require('dotenv').config();
 
 const { REST, Routes } = require('discord.js');
-const commands = require('./core/commands');
+const COMMANDS = require('./core/commands');
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 // コマンドデータを配列に変換
-const commandData = Object.values(commands).map(cmd => cmd.data);
+const commandData = Object.values(COMMANDS).map(cmd => cmd.data);
+
+console.log('🔄 コマンドデータ:\n', commandData);
 
 async function deployCommands() {
   try {

@@ -31,8 +31,19 @@ const COLORS = {
   ERROR:    "#EC0000"
 };
 
+const TIMEis = new Date().toLocaleDateString('ja-JP', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false
+});
+
 module.exports = {
-  COLORS,
+  isDev,
   tempCHANNELS: CHANNELS,
-  isDev
+  COLORS,
+  TIMEis
 };

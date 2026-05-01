@@ -1,4 +1,4 @@
-const { COLORS, isDev } = require("../constants");
+const { isDev, COLORS, TIMEis } = require("../constants");
 const { CustomEmbedBuilder } = require("../embedBuilder");
 
 async function service(CLIENT, CHANNEL) {
@@ -9,11 +9,18 @@ async function service(CLIENT, CHANNEL) {
     .setDescription('サーバー管理BOTがオンラインになりました！')
     .setColor(COLORS.ONLINE);
 
-  embed.embedData.fields.push({
-    name: 'Mode',
-    value: isDev ? 'Development' : 'Production',
-    inline: true
-  });
+  embed.embedData.fields.push(
+    {
+      name: '🕒 Wake-up',
+      value: TIMEis,
+      inline: false
+    },
+    {
+      name: '⚙️ Mode',
+      value: isDev ? 'Development' : 'Production',
+      inline: false
+    }
+  );
 
   try{
     await CHANNEL.send({ embeds: [embed.build()] });
