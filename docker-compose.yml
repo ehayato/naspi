@@ -77,27 +77,27 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command: ["restic -r /backup/repo backup /data && restic -r /backup/repo forget --prune --keep-daily 7 --keep-weekly 4"]
 
-  # Immich (Photo Management)
-  immich:
-    <<: *service-defaults
-    image: ghcr.io/immich-app/immich-server:latest
-    container_name: naspi_immich
-    environment:
-      - TZ=Asia/Tokyo
-    volumes:
-      - ${PHOTO_UPLOAD}:/usr/src/app/upload
-    ports:
-      - "2283:2283"
-    depends_on:
-      - immich-db
+  # # Immich (Photo Management)
+  # immich:
+  #   <<: *service-defaults
+  #   image: ghcr.io/immich-app/immich-server:latest
+  #   container_name: naspi_immich
+  #   environment:
+  #     - TZ=Asia/Tokyo
+  #   volumes:
+  #     - ${PHOTO_UPLOAD}:/usr/src/app/upload
+  #   ports:
+  #     - "2283:2283"
+  #   depends_on:
+  #     - immich-db
 
-  immich-db:
-    <<: *service-defaults
-    image: postgres:15
-    container_name: naspi_immich_db
-    environment:
-      - POSTGRES_PASSWORD=immichpassword
-      - POSTGRES_USER=immich
-      - POSTGRES_DB=immich
-    volumes:
-      - ${IMMICH_DB}:/var/lib/postgresql/data
+  # immich-db:
+  #   <<: *service-defaults
+  #   image: postgres:15
+  #   container_name: naspi_immich_db
+  #   environment:
+  #     - POSTGRES_PASSWORD=immichpassword
+  #     - POSTGRES_USER=immich
+  #     - POSTGRES_DB=immich
+  #   volumes:
+  #     - ${IMMICH_DB}:/var/lib/postgresql/data
