@@ -6,7 +6,7 @@ const data = {
   button: {
     label: 'ヘルプ',
     emoji: '❓',
-    style: 'PRIMARY'
+    style: 'Primary'
   }
 }
 

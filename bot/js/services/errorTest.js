@@ -4,7 +4,7 @@ const data = {
   button: {
     label: 'エラーテスト',
     emoji: '❌',
-    style: 'DANGER'
+    style: 'Danger'
   }
 }
 

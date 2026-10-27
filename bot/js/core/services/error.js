@@ -13,16 +13,24 @@ async function service(interaction, message, rawError = null, CHANNELS) {
     embeds: [userEmbed],
     ephemeral: true
   };
-  if (interaction.replied || interaction.deferred) {
-    await interaction.followUp(payload);
-  } else {
-    await interaction.reply(payload);
+  // トークン期限切れ等で返信できなくてもプロセスを落とさず、ログ通知は続ける
+  try {
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp(payload);
+    } else {
+      await interaction.reply(payload);
+    }
+  } catch (replyError) {
+    console.error(`\nerror.js\n${replyError}\n`);
   }
+
+  // ボタン経由の場合は commandName が無いため customId から取り出す
+  const commandName = interaction.commandName ?? interaction.customId?.replace('btn_', '');
 
   // ログチャンネルへのエラー通知
   const logEmbed = new CustomEmbedBuilder()
     .setTitle('🚨 エラーログ通知')
-    .setDescription(`コマンド : \`/${interaction.commandName}\`\n内容 : ${message}`)
+    .setDescription(`コマンド : \`/${commandName}\`\n内容 : ${message}`)
     .setColor(COLORS.ERROR)
     
   if (rawError) {

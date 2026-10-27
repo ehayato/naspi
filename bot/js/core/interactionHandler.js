@@ -25,7 +25,9 @@ async function handleInteraction(interaction, CHANNELS) {
 
     await errorService.service(
       interaction, 
-      `\`${commandName}\` というコマンドは登録されていないか、利用できません。`
+      `\`${commandName}\` というコマンドは登録されていないか、利用できません。`,
+      null,
+      CHANNELS
     );
 
     return;

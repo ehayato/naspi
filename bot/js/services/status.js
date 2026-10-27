@@ -10,7 +10,7 @@ const data = {
   button: {
     label: 'ステータス',
     emoji: '📊',
-    style: 'PRIMARY'
+    style: 'Primary'
   }
 }
 

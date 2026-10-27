@@ -7,7 +7,7 @@ const data = {
   button: {
     label: 'カラーコード',
     emoji: '🎨',
-    style: 'PRIMARY'
+    style: 'Primary'
   }
 }
 
