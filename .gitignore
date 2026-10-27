@@ -1,4 +1,8 @@
-.history/
-.history/*
 node_modules/
 .env
+rclone/rclone.conf
+rclone/bisync/
+rclone/cache/
+restic/config
+.history/
+.history/*

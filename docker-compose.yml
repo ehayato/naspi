@@ -1,0 +1,122 @@
+# Common service settings
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+
+services:
+  # DiscordBot
+  bot:
+    <<: *service-defaults
+    build: ./bot
+    container_name: naspi_bot
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      # 開発チャンネル
+      - DEV_CH_COCKPIT=${DEV_CH_COCKPIT}
+      - DEV_CH_STATUS=${DEV_CH_STATUS}
+      - DEV_CH_CLOUD=${DEV_CH_CLOUD}
+      - DEV_CH_BACKUP=${DEV_CH_BACKUP}
+      - DEV_CH_LOG=${DEV_CH_LOG}
+      - DEV_CH_TEST=${DEV_CH_TEST}
+      # 本番チャンネル
+      - PROD_CH_COCKPIT=${PROD_CH_COCKPIT}
+      - PROD_CH_STATUS=${PROD_CH_STATUS}
+      - PROD_CH_CLOUD=${PROD_CH_CLOUD}
+      - PROD_CH_BACKUP=${PROD_CH_BACKUP}
+      - PROD_CH_LOG=${PROD_CH_LOG}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # /status のストレージ使用率取得用
+      - ${DATA_CLOUD}:/mnt/cloud:ro
+      - ${DATA_LOCAL}:/mnt/local:ro
+
+  # Samba
+  samba:
+    <<: *service-defaults
+    image: dperson/samba
+    container_name: naspi_samba
+    network_mode: "host"
+    environment:
+      - USERID=1000
+      - GROUPID=1000
+      - SAMBA_USER=${SAMBA_USER}
+      - SAMBA_PASSWORD=${SAMBA_PASSWORD}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./samba/smb.conf:/etc/samba/smb.conf:ro
+      # 開発モードでrclone-syncがマウントしたクラウドを受け取る
+      - ${DATA_CLOUD}:/mnt/pd_sync:rslave
+      - ${DATA_LOCAL}:/mnt/local
+    command: >
+      -u "${SAMBA_USER};${SAMBA_PASSWORD}"
+      -s "Cloud-Sync;/mnt/pd_sync;yes;no;no;${SAMBA_USER}"
+      -s "Local-NAS;/mnt/local;yes;no;no;${SAMBA_USER}"
+
+  # rclone-sync (Cloud Sync)
+  rclone-sync:
+    <<: *service-defaults
+    image: rclone/rclone:latest
+    container_name: naspi_rclone
+    # Sambaと同じUID/GIDでファイルを作成する
+    user: "1000:1000"
+    # 開発モードの rclone mount (FUSE) 用
+    devices:
+      - /dev/fuse
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    environment:
+      - TZ=Asia/Tokyo
+      - NODE_ENV=${NODE_ENV}
+      - RCLONE_CONFIG=${RCLONE_CONFIG}
+      - RCLONE_CACHE_DIR=/config/rclone/cache
+      - RCLONE_REMOTE=${RCLONE_REMOTE}
+      - SYNC_INTERVAL=${SYNC_INTERVAL}
+    volumes:
+      # rshared: コンテナ内のマウントをホストとSambaに伝播させる
+      - ${DATA_CLOUD}:/data:rshared
+      - ./rclone:/config/rclone
+      # fusermount3 が UID 1000 のユーザー名を解決するために必要
+      - /etc/passwd:/etc/passwd:ro
+    entrypoint: ["/bin/sh", "/config/rclone/sync.sh"]
+
+  # restic-backup (Versioned Backup)
+  restic-backup:
+    <<: *service-defaults
+    image: restic/restic:latest
+    container_name: naspi_restic
+    environment:
+      - TZ=Asia/Tokyo
+      - RESTIC_PASSWORD=${RESTIC_PASSWORD}
+      - BACKUP_INTERVAL=${BACKUP_INTERVAL}
+    volumes:
+      - ${DATA_CLOUD}:/data:ro
+      - ${DATA_HDD}:/backup
+      - ./restic:/config
+    entrypoint: ["/bin/sh", "/config/backup.sh"]
+
+  # # Immich (Photo Management)
+  # immich:
+  #   <<: *service-defaults
+  #   image: ghcr.io/immich-app/immich-server:latest
+  #   container_name: naspi_immich
+  #   environment:
+  #     - TZ=Asia/Tokyo
+  #   volumes:
+  #     - ${PHOTO_UPLOAD}:/usr/src/app/upload
+  #   ports:
+  #     - "2283:2283"
+  #   depends_on:
+  #     - immich-db
+
+  # immich-db:
+  #   <<: *service-defaults
+  #   image: postgres:15
+  #   container_name: naspi_immich_db
+  #   environment:
+  #     - POSTGRES_PASSWORD=immichpassword
+  #     - POSTGRES_USER=immich
+  #     - POSTGRES_DB=immich
+  #   volumes:
+  #     - ${IMMICH_DB}:/var/lib/postgresql/data
