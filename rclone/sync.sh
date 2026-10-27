@@ -4,7 +4,7 @@ set -u
 
 LOCAL_DIR="/data"
 REMOTE="${RCLONE_REMOTE:-protondrive:}"
-INTERVAL="${SYNC_INTERVAL:-3600}"
+INTERVAL="${SYNC_INTERVAL:-1800}"
 WORKDIR="/config/rclone/bisync"
 
 run_bisync() {

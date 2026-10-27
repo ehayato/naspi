@@ -23,7 +23,7 @@ async function sendControlPanel(CHANNEL, ALLCMDs) {
     .setColor(COLORS.COCKPIT);
 
   embed.embedData.fields.push(
-    { name: '📅 Latest Update', value: TIMEis, inline: false }
+    { name: '📅 Latest Update', value: TIMEis(), inline: false }
   );
 
   await CHANNEL.bulkDelete(10).catch(() => {});

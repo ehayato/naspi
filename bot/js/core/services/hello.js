@@ -12,7 +12,7 @@ async function service(CLIENT, CHANNEL) {
   embed.embedData.fields.push(
     {
       name: '🕒 Wake-up',
-      value: TIMEis,
+      value: TIMEis(),
       inline: false
     },
     {

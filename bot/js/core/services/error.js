@@ -11,7 +11,7 @@ async function service(interaction, message, rawError = null, CHANNELS) {
 
   const payload = {
     embeds: [userEmbed],
-    ephameral: true
+    ephemeral: true
   };
   if (interaction.replied || interaction.deferred) {
     await interaction.followUp(payload);

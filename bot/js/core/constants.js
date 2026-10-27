@@ -31,7 +31,9 @@ const COLORS = {
   ERROR:    "#EC0000"
 };
 
-const TIMEis = new Date().toLocaleDateString('ja-JP', {
+// 呼び出し時点の日時を返す（コンテナのTZに依存しないよう日本時間を指定）
+const TIMEis = () => new Date().toLocaleDateString('ja-JP', {
+  timeZone: 'Asia/Tokyo',
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',

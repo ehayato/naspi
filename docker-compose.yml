@@ -79,7 +79,7 @@ services:
       - ${DATA_HDD}:/backup
       - ./restic:/config
     entrypoint: ["/bin/sh", "-c"]
-    command: ["restic -r /backup/repo backup /data && restic -r /backup/repo forget --prune --keep-daily 7 --keep-weekly 4"]
+    command: ["restic -r /backup/repo backup /data && restic -r /backup/repo forget --prune --keep-daily 7 --keep-weekly 2"]
 
   # # Immich (Photo Management)
   # immich:
