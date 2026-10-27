@@ -44,7 +44,8 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./samba/smb.conf:/etc/samba/smb.conf:ro
-      - ${DATA_CLOUD}:/mnt/pd_sync
+      # 開発モードでrclone-syncがマウントしたクラウドを受け取る
+      - ${DATA_CLOUD}:/mnt/pd_sync:rslave
       - ${DATA_LOCAL}:/mnt/local
     command: >
       -u "${SAMBA_USER};${SAMBA_PASSWORD}"
@@ -58,15 +59,26 @@ services:
     container_name: naspi_rclone
     # Sambaと同じUID/GIDでファイルを作成する
     user: "1000:1000"
+    # 開発モードの rclone mount (FUSE) 用
+    devices:
+      - /dev/fuse
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
     environment:
       - TZ=Asia/Tokyo
+      - NODE_ENV=${NODE_ENV}
       - RCLONE_CONFIG=${RCLONE_CONFIG}
       - RCLONE_CACHE_DIR=/config/rclone/cache
       - RCLONE_REMOTE=${RCLONE_REMOTE}
       - SYNC_INTERVAL=${SYNC_INTERVAL}
     volumes:
-      - ${DATA_CLOUD}:/data
+      # rshared: コンテナ内のマウントをホストとSambaに伝播させる
+      - ${DATA_CLOUD}:/data:rshared
       - ./rclone:/config/rclone
+      # fusermount3 が UID 1000 のユーザー名を解決するために必要
+      - /etc/passwd:/etc/passwd:ro
     entrypoint: ["/bin/sh", "/config/rclone/sync.sh"]
 
   # restic-backup (Versioned Backup)
@@ -77,12 +89,12 @@ services:
     environment:
       - TZ=Asia/Tokyo
       - RESTIC_PASSWORD=${RESTIC_PASSWORD}
+      - BACKUP_INTERVAL=${BACKUP_INTERVAL}
     volumes:
       - ${DATA_CLOUD}:/data:ro
       - ${DATA_HDD}:/backup
       - ./restic:/config
-    entrypoint: ["/bin/sh", "-c"]
-    command: ["restic -r /backup/repo backup /data && restic -r /backup/repo forget --prune --keep-daily 7 --keep-weekly 2"]
+    entrypoint: ["/bin/sh", "/config/backup.sh"]
 
   # # Immich (Photo Management)
   # immich:
