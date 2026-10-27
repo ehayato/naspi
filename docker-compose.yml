@@ -26,6 +26,9 @@ services:
       - PROD_CH_LOG=${PROD_CH_LOG}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      # /status のストレージ使用率取得用
+      - ${DATA_CLOUD}:/mnt/cloud:ro
+      - ${DATA_LOCAL}:/mnt/local:ro
 
   # Samba
   samba:
