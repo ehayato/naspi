@@ -53,14 +53,18 @@ services:
     <<: *service-defaults
     image: rclone/rclone:latest
     container_name: naspi_rclone
+    # Sambaと同じUID/GIDでファイルを作成する
+    user: "1000:1000"
     environment:
       - TZ=Asia/Tokyo
       - RCLONE_CONFIG=${RCLONE_CONFIG}
+      - RCLONE_CACHE_DIR=/config/rclone/cache
+      - RCLONE_REMOTE=${RCLONE_REMOTE}
+      - SYNC_INTERVAL=${SYNC_INTERVAL}
     volumes:
       - ${DATA_CLOUD}:/data
       - ./rclone:/config/rclone
-    entrypoint: ["/bin/sh", "-c"]
-    command: ["while true; do rclone sync /data remote:protondrive --config $RCLONE_CONFIG; sleep 3600; done"]
+    entrypoint: ["/bin/sh", "/config/rclone/sync.sh"]
 
   # restic-backup (Versioned Backup)
   restic-backup:
