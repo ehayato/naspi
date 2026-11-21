@@ -30,8 +30,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # /status のストレージ使用率取得用
-      - ${DATA_CLOUD}:/mnt/cloud:ro
-      - ${DATA_LOCAL}:/mnt/local:ro
+      # FUSE のマウント先を直接 bind すると、rclone の再起動後に古いマウントのまま壊れる(ENOTCONN)ため、
+      # 親ディレクトリを rslave で bind して、マウントの追加・解除に追従させる
+      - ${DATA_ROOT:-/mnt/data}:/mnt/data:ro,rslave
       # /status・/log が同期・バックアップの実行履歴を読むため
       - ./history:/history:ro
 
@@ -49,13 +50,12 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./samba/smb.conf:/etc/samba/smb.conf:ro
-      # 開発モードでrclone-syncがマウントしたクラウドを受け取る
-      - ${DATA_CLOUD}:/mnt/pd_sync:rslave
-      - ${DATA_LOCAL}:/mnt/local
+      # 開発モードでrclone-syncがマウントしたクラウドを受け取る(/mnt/data/cloud)
+      # FUSE のマウント先を直接 bind すると、rclone の再起動後に古いマウントのまま壊れるため、
+      # 親ディレクトリを rslave で bind する。共有するのは smb.conf で指定した cloud と local のみ
+      - ${DATA_ROOT:-/mnt/data}:/mnt/data:rslave
     command: >
       -u "${SAMBA_USER};${SAMBA_PASSWORD}"
-      -s "Cloud-Sync;/mnt/pd_sync;yes;no;no;${SAMBA_USER}"
-      -s "Local-NAS;/mnt/local;yes;no;no;${SAMBA_USER}"
 
   # rclone-sync (Cloud Sync)
   rclone-sync:

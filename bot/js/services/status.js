@@ -17,8 +17,8 @@ const data = {
 
 // docker-compose.yml で読み取り専用マウントしているストレージ
 const STORAGES = [
-  { name: 'Cloud-Sync', path: '/mnt/cloud' },
-  { name: 'Local-NAS', path: '/mnt/local' }
+  { name: 'Cloud-Sync', path: '/mnt/data/cloud' },
+  { name: 'Local-NAS', path: '/mnt/data/local' }
 ];
 
 const CPU_SAMPLE_MS = 500;
