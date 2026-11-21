@@ -44,6 +44,11 @@ async function service(interaction, message, rawError = null, CHANNELS) {
       value: `ID: ${interaction.user.id}\nTag: ${interaction.user.tag}` });
   }
 
+  if (!CHANNELS?.LOG) {
+    console.warn('\nerror.js\nLOG チャンネルが未設定のため、エラーログ通知を送信しません\n');
+    return;
+  }
+
   try {
     await CHANNELS.LOG.send({ 
       embeds: [logEmbed.build()]
