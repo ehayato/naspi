@@ -9,6 +9,29 @@ REMOTE="${RCLONE_REMOTE:-protondrive:}"
 INTERVAL="${SYNC_INTERVAL:-1800}"
 WORKDIR="/config/rclone/bisync"
 
+# 実行結果を履歴に追記する（Botの /log・/status が読む）
+# 形式: 開始時刻(epoch)<TAB>auto|manual<TAB>終了コード<TAB>所要秒
+# 直近の出力は sync.last.log に残す。履歴を書けなくても本処理の成否には影響させない
+HISTORY_DIR="${HISTORY_DIR:-/history}"
+HISTORY_MAX_LINES=1000
+
+run_recorded() {
+  trigger="$1"
+  shift
+  start=$(date +%s)
+  rc_file=$(mktemp)
+
+  { "$@"; echo $? > "$rc_file"; } 2>&1 | tee "$HISTORY_DIR/sync.last.log"
+  rc=$(cat "$rc_file")
+  rm -f "$rc_file"
+
+  printf '%s\t%s\t%s\t%s\n' "$start" "$trigger" "$rc" "$(( $(date +%s) - start ))" \
+    >> "$HISTORY_DIR/sync.tsv"
+  tail -n "$HISTORY_MAX_LINES" "$HISTORY_DIR/sync.tsv" > "$HISTORY_DIR/sync.tsv.tmp" &&
+    mv "$HISTORY_DIR/sync.tsv.tmp" "$HISTORY_DIR/sync.tsv"
+  return "$rc"
+}
+
 # 設定ファイルにリモートが定義済みか（[name] だけで type 未設定の場合も未定義扱い）
 remote_ready() {
   rclone listremotes 2>/dev/null | grep -qx "${REMOTE%%:*}:"
@@ -82,11 +105,11 @@ mkdir -p "$WORKDIR"
 
 # Discord Bot からの手動実行用: 1回だけ同期して終了する（終了コードで成否を返す）
 if [ "${1:-}" = "once" ]; then
-  sync_once
+  run_recorded manual sync_once
   exit $?
 fi
 
 while true; do
-  sync_once
+  run_recorded auto sync_once
   sleep "$INTERVAL"
 done

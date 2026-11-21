@@ -4,5 +4,6 @@ rclone/rclone.conf
 rclone/bisync/
 rclone/cache/
 restic/config
+history/
 .history/
 .history/*

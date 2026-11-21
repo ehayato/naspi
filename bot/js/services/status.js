@@ -2,7 +2,8 @@
 const os = require('os');
 const fs = require('fs/promises');
 const { CustomEmbedBuilder } = require('../core/embedBuilder');
-const { COLORS } = require('../core/constants');
+const { isDev, COLORS } = require('../core/constants');
+const { JOBS, readHistory, describeRun, describeNextRun } = require('../core/services/history');
 
 const data = {
   name: 'status',
@@ -76,14 +77,34 @@ async function getStorageUsage({ name, path }) {
   }
 }
 
+// 同期・バックアップの最終実行と次回予定
+async function getJobStatus(job) {
+  const { label, emoji } = JOBS[job];
+  const name = `${emoji} ${label}`;
+
+  if (isDev && job === 'sync') {
+    return { name, value: '開発モード（クラウドを直接マウント中・同期は停止）', inline: false };
+  }
+
+  const runs = await readHistory(job);
+  if (runs.length === 0) return { name, value: '実行記録がありません', inline: false };
+
+  const lines = [`最終: ${describeRun(runs.at(-1))}`];
+  const next = describeNextRun(job, runs);
+  if (next) lines.push(`次回: ${next}`);
+  return { name, value: lines.join('\n'), inline: false };
+}
+
 async function service(interaction) {
   // CPU計測で応答が遅れるため先に応答を保留する
   await interaction.deferReply({ flags: 64 });
 
-  const [cpuUsage, cpuTemp, storages] = await Promise.all([
+  const [cpuUsage, cpuTemp, storages, syncStatus, backupStatus] = await Promise.all([
     getCpuUsage(),
     getCpuTemp(),
-    Promise.all(STORAGES.map(getStorageUsage))
+    Promise.all(STORAGES.map(getStorageUsage)),
+    getJobStatus('sync'),
+    getJobStatus('backup')
   ]);
 
   const totalMem = os.totalmem();
@@ -101,6 +122,8 @@ async function service(interaction) {
     { name: 'ロードアベレージ (1/5/15分)', value: load, inline: true },
     { name: 'メモリ使用量', value: `${formatBytes(usedMem)} / ${formatBytes(totalMem)} (${(usedMem / totalMem * 100).toFixed(0)}%)`, inline: false },
     ...storages.map(s => ({ name: `ストレージ: ${s.name}`, value: s.value, inline: true })),
+    syncStatus,
+    backupStatus,
     { name: 'サーバー稼働時間', value: formatDuration(os.uptime()), inline: true },
     { name: 'Bot稼働時間', value: formatDuration(process.uptime()), inline: true }
   );
