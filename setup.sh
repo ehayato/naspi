@@ -20,7 +20,7 @@ sudo systemctl start docker || true
 
 # ====== プロジェクトディレクトリ作成 ======
 echo "[5/6] Creating project directories..."
-mkdir -p rclone restic samba
+mkdir -p rclone restic samba history
 
 # ====== .env.exampleコピー（初回のみ） ======
 echo "[6/6] Copying .env.example to .env (if not exists)..."

@@ -9,6 +9,29 @@ REMOTE="${RCLONE_REMOTE:-protondrive:}"
 INTERVAL="${SYNC_INTERVAL:-1800}"
 WORKDIR="/config/rclone/bisync"
 
+# 実行結果を履歴に追記する（Botの /log・/status が読む）
+# 形式: 開始時刻(epoch)<TAB>auto|manual<TAB>終了コード<TAB>所要秒
+# 直近の出力は sync.last.log に残す。履歴を書けなくても本処理の成否には影響させない
+HISTORY_DIR="${HISTORY_DIR:-/history}"
+HISTORY_MAX_LINES=1000
+
+run_recorded() {
+  trigger="$1"
+  shift
+  start=$(date +%s)
+  rc_file=$(mktemp)
+
+  { "$@"; echo $? > "$rc_file"; } 2>&1 | tee "$HISTORY_DIR/sync.last.log"
+  rc=$(cat "$rc_file")
+  rm -f "$rc_file"
+
+  printf '%s\t%s\t%s\t%s\n' "$start" "$trigger" "$rc" "$(( $(date +%s) - start ))" \
+    >> "$HISTORY_DIR/sync.tsv"
+  tail -n "$HISTORY_MAX_LINES" "$HISTORY_DIR/sync.tsv" > "$HISTORY_DIR/sync.tsv.tmp" &&
+    mv "$HISTORY_DIR/sync.tsv.tmp" "$HISTORY_DIR/sync.tsv"
+  return "$rc"
+}
+
 # 設定ファイルにリモートが定義済みか（[name] だけで type 未設定の場合も未定義扱い）
 remote_ready() {
   rclone listremotes 2>/dev/null | grep -qx "${REMOTE%%:*}:"
@@ -47,7 +70,29 @@ run_bisync() {
     "$@"
 }
 
+# 1回分の同期。同期できない状態のときは理由を表示して1を返す
+sync_once() {
+  if ! remote_ready; then
+    echo "[sync] $RCLONE_CONFIG にリモート ${REMOTE%%:*} が設定されていません。rclone config で Proton Drive を設定してください"
+    return 1
+  elif ls "$WORKDIR"/*.lst-err >/dev/null 2>&1; then
+    # 致命的エラー後は自動復旧せず、手動での --resync を待つ
+    echo "[sync] 前回の bisync が致命的エラーで停止しています。内容を確認後、手動で --resync を実行してください"
+    return 1
+  elif ls "$WORKDIR"/*.lst >/dev/null 2>&1; then
+    run_bisync
+  else
+    # 初回のみ両側の和集合で基準状態を作る（削除は行わない）
+    echo "[sync] 初回実行のため --resync で初期化します"
+    run_bisync --resync --resync-mode newer
+  fi
+}
+
 if [ "$MODE" = "development" ]; then
+  if [ "${1:-}" = "once" ]; then
+    echo "[sync] 開発モードではクラウドを直接マウントしているため、同期は行いません"
+    exit 1
+  fi
   until remote_ready; do
     echo "[mount] $RCLONE_CONFIG にリモート ${REMOTE%%:*} が設定されていません。rclone config で Proton Drive を設定してください"
     sleep 60
@@ -58,18 +103,13 @@ fi
 
 mkdir -p "$WORKDIR"
 
+# Discord Bot からの手動実行用: 1回だけ同期して終了する（終了コードで成否を返す）
+if [ "${1:-}" = "once" ]; then
+  run_recorded manual sync_once
+  exit $?
+fi
+
 while true; do
-  if ! remote_ready; then
-    echo "[sync] $RCLONE_CONFIG にリモート ${REMOTE%%:*} が設定されていません。rclone config で Proton Drive を設定してください"
-  elif ls "$WORKDIR"/*.lst-err >/dev/null 2>&1; then
-    # 致命的エラー後は自動復旧せず、手動での --resync を待つ
-    echo "[sync] 前回の bisync が致命的エラーで停止しています。内容を確認後、手動で --resync を実行してください"
-  elif ls "$WORKDIR"/*.lst >/dev/null 2>&1; then
-    run_bisync
-  else
-    # 初回のみ両側の和集合で基準状態を作る（削除は行わない）
-    echo "[sync] 初回実行のため --resync で初期化します"
-    run_bisync --resync --resync-mode newer
-  fi
+  run_recorded auto sync_once
   sleep "$INTERVAL"
 done

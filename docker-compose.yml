@@ -18,6 +18,9 @@ services:
       - DEV_CH_BACKUP=${DEV_CH_BACKUP}
       - DEV_CH_LOG=${DEV_CH_LOG}
       - DEV_CH_TEST=${DEV_CH_TEST}
+      # /status の次回実行予定の算出用
+      - SYNC_INTERVAL=${SYNC_INTERVAL}
+      - BACKUP_INTERVAL=${BACKUP_INTERVAL}
       # 本番チャンネル
       - PROD_CH_COCKPIT=${PROD_CH_COCKPIT}
       - PROD_CH_STATUS=${PROD_CH_STATUS}
@@ -27,8 +30,11 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # /status のストレージ使用率取得用
-      - ${DATA_CLOUD}:/mnt/cloud:ro
-      - ${DATA_LOCAL}:/mnt/local:ro
+      # FUSE のマウント先を直接 bind すると、rclone の再起動後に古いマウントのまま壊れる(ENOTCONN)ため、
+      # 親ディレクトリを rslave で bind して、マウントの追加・解除に追従させる
+      - ${DATA_ROOT:-/mnt/data}:/mnt/data:ro,rslave
+      # /status・/log が同期・バックアップの実行履歴を読むため
+      - ./history:/history:ro
 
   # Samba
   samba:
@@ -44,13 +50,12 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./samba/smb.conf:/etc/samba/smb.conf:ro
-      # 開発モードでrclone-syncがマウントしたクラウドを受け取る
-      - ${DATA_CLOUD}:/mnt/pd_sync:rslave
-      - ${DATA_LOCAL}:/mnt/local
+      # 開発モードでrclone-syncがマウントしたクラウドを受け取る(/mnt/data/cloud)
+      # FUSE のマウント先を直接 bind すると、rclone の再起動後に古いマウントのまま壊れるため、
+      # 親ディレクトリを rslave で bind する。共有するのは smb.conf で指定した cloud と local のみ
+      - ${DATA_ROOT:-/mnt/data}:/mnt/data:rslave
     command: >
       -u "${SAMBA_USER};${SAMBA_PASSWORD}"
-      -s "Cloud-Sync;/mnt/pd_sync;yes;no;no;${SAMBA_USER}"
-      -s "Local-NAS;/mnt/local;yes;no;no;${SAMBA_USER}"
 
   # rclone-sync (Cloud Sync)
   rclone-sync:
@@ -77,6 +82,8 @@ services:
       # rshared: コンテナ内のマウントをホストとSambaに伝播させる
       - ${DATA_CLOUD}:/data:rshared
       - ./rclone:/config/rclone
+      # 実行履歴の書き出し先
+      - ./history:/history
       # fusermount3 が UID 1000 のユーザー名を解決するために必要
       - /etc/passwd:/etc/passwd:ro
     entrypoint: ["/bin/sh", "/config/rclone/sync.sh"]
@@ -88,12 +95,15 @@ services:
     container_name: naspi_restic
     environment:
       - TZ=Asia/Tokyo
+      - NODE_ENV=${NODE_ENV}
       - RESTIC_PASSWORD=${RESTIC_PASSWORD}
       - BACKUP_INTERVAL=${BACKUP_INTERVAL}
     volumes:
       - ${DATA_CLOUD}:/data:ro
       - ${DATA_HDD}:/backup
       - ./restic:/config
+      # 実行履歴の書き出し先
+      - ./history:/history
     entrypoint: ["/bin/sh", "/config/backup.sh"]
 
   # # Immich (Photo Management)
