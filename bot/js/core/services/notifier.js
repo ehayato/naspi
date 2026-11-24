@@ -261,6 +261,7 @@ function start(CHANNELS) {
 
 module.exports = {
   start,
+  readAuthState,
   poll,
   sendDigests,
   classify,

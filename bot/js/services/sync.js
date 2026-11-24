@@ -8,7 +8,9 @@ const data = {
   button: {
     label: '同期',
     emoji: '🔄',
-    style: 'Primary'
+    style: 'Primary',
+    group: 'main',
+    order: 30
   }
 }
 

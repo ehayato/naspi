@@ -1,10 +1,13 @@
 const data = {
   name: 'errortest',
-  description: 'エラーを発生させるテストコマンド',
+  description: 'エラー通知の動作確認のため、わざとエラーを発生させます（開発用）',
+  devOnly: true,
   button: {
     label: 'エラーテスト',
-    emoji: '❌',
-    style: 'Danger'
+    emoji: '🚨',
+    style: 'Danger',
+    group: 'dev',
+    order: 70
   }
 }
 

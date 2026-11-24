@@ -6,14 +6,21 @@ const data = {
   button: {
     label: 'ヘルプ',
     emoji: '❓',
-    style: 'Primary'
+    style: 'Secondary',
+    group: 'main',
+    order: 50
   }
 }
 
 async function service(interaction, allCommands) {
-  const commandList = Object.values(allCommands).map(cmd => {
-    return `**/${cmd.data.name}**: ${cmd.data.description}`;
-  }).join('\n');
+  // 通常の操作と、開発モード専用の操作を分けて表示する
+  const line = cmd => `**/${cmd.data.name}**: ${cmd.data.description}`;
+  const cmds = Object.values(allCommands);
+  const dev = cmds.filter(cmd => cmd.data.devOnly);
+  const commandList = [
+    ...cmds.filter(cmd => !cmd.data.devOnly).map(line),
+    ...(dev.length ? ['', '**開発モード専用**', ...dev.map(line)] : [])
+  ].join('\n');
 
   const embeds = new CustomEmbedBuilder()
     .setTitle('📝 利用可能なコマンド一覧')

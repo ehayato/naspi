@@ -11,7 +11,9 @@ const data = {
   button: {
     label: 'ログ',
     emoji: '📜',
-    style: 'Primary'
+    style: 'Secondary',
+    group: 'main',
+    order: 20
   }
 }
 
