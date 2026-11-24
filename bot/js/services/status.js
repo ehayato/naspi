@@ -135,5 +135,6 @@ async function service(interaction) {
 
 module.exports = {
   data,
-  service
+  service,
+  getStorageUsage
 };
