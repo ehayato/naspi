@@ -3,11 +3,14 @@ const { COLORS } = require("../core/constants");
 
 const data = {
   name: 'colors',
-  description: '利用可能なカラーコードを表示します',
+  description: 'Embed で使うカラーコードの一覧を表示します（開発用）',
+  devOnly: true,
   button: {
     label: 'カラーコード',
     emoji: '🎨',
-    style: 'Primary'
+    style: 'Secondary',
+    group: 'dev',
+    order: 80
   }
 }
 

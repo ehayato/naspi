@@ -86,6 +86,22 @@ docker exec naspi_restic restic -r /backup/repo restore <ID> --target /tmp/resto
 データ本体をすべて読む検査（`check --read-data`）は大容量では時間がかかる。定期的には `--read-data-subset=10%` のように
 一部ずつ確認し、構成を変えたときなどに大きめの割合で確認する。
 
+### バックアップの中身をファイル管理ソフトで見る
+
+restic のリポジトリは暗号化されているため、そのままでは開けない。ホストの restic で `mount` すると、世代ごとのフォルダとして読み取り専用で見える。
+
+```
+sudo pacman -S restic                  # ホストに restic がない場合
+mkdir -p ~/restic-view
+set -a; . ./.env; set +a               # RESTIC_PASSWORD を読み込む
+sudo --preserve-env=RESTIC_PASSWORD restic -r /mnt/data/hdd/repo mount --allow-other ~/restic-view
+sudo fusermount3 -u ~/restic-view      # 見終わったら解除する
+```
+
+- リポジトリは、コンテナの restic（root）が作るため、所有者が root で権限が `700`。ホストでは `sudo` が必要になる（所有者を変えるのは避ける）。
+- `--allow-other` がないと、root がマウントしたものを一般ユーザーのファイル管理ソフトから見られない。
+- マウント中は、そのターミナルを占有する。`snapshots/` の下に世代ごとのフォルダが並ぶ。
+
 ## 4. 障害時の復旧（手順。別環境での実施は未検証）
 
 HDD の故障やサーバーの再構築などの後に、バックアップから復旧する手順。
@@ -113,8 +129,10 @@ HDD の故障やサーバーの再構築などの後に、バックアップか�
   以降の `check` などが「repository is already locked」で失敗する（実際に発生した）。
   バックアップ実行中でないことを確認して、`restic unlock` で古いロックだけを削除する（実行中のロックは削除されない）。
 - **バックアップの実行中に元データが消えると、読めた分だけの不完全なスナップショットが保存される。**
-  restic は一部が読めなくても、終了コード 3 でスナップショットを保存する。このスナップショットは 1 世代として数えられる。
-  `backup.sh` は終了コードが 0 でなければ `forget --prune` を行わず、実行履歴にも失敗として残る（`/log` で確認できる）。
+  restic は一部が読めなくても、終了コード 3 でスナップショットを保存する。
+  `backup.sh` は終了コード 3 のとき、そのスナップショットに `partial` タグを付け、`forget --prune` を行わず、
+  実行履歴にも失敗として残す（`/log` で確認できる）。次に完全なバックアップが取れた時点で `partial` のものは削除されるため、
+  不完全なスナップショットが世代として数えられ続けることはない。
   不完全なスナップショットは、網羅性の確認（3/4）で検出できる。
 - 開発モードでは、`docker compose up -d` などでコンテナを作り直すと、実行中のバックアップや同期が中断される。
 

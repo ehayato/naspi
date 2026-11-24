@@ -52,8 +52,29 @@ backup_once() {
     echo "[backup] 開発モードのためクラウドは対象外とし、$SOURCE_DIR をバックアップします"
   fi
 
-  restic backup "$SOURCE_DIR" &&
-    restic forget --prune --keep-daily 7 --keep-weekly 2
+  restic backup "$SOURCE_DIR"
+  rc=$?
+  if [ "$rc" -eq 3 ]; then
+    # 一部が読めなくても restic はスナップショットを保存する（終了コード3）。
+    # 不完全なものが世代として数えられないよう partial タグを付け、世代整理は行わない
+    id=$(restic snapshots --path "$SOURCE_DIR" --latest 1 --json 2>/dev/null |
+      grep -o '"short_id":"[0-9a-f]*"' | tail -1 | cut -d'"' -f4)
+    if [ -n "$id" ] && restic tag --add partial "$id" >/dev/null 2>&1; then
+      echo "[backup] 一部のファイルを読めませんでした。スナップショットに partial タグを付けました"
+    fi
+    return 3
+  elif [ "$rc" -ne 0 ]; then
+    return "$rc"
+  fi
+
+  # 完全なスナップショットが取れたので、過去の不完全なもの(partial)を削除してから世代を整理する
+  # （forget は --tag だけでは何も削除しないため、ID を取得して指定する）
+  partial_ids=$(restic snapshots --tag partial --json 2>/dev/null | grep -o '"short_id":"[0-9a-f]*"' | cut -d'"' -f4)
+  if [ -n "$partial_ids" ]; then
+    # shellcheck disable=SC2086
+    restic forget $partial_ids >/dev/null 2>&1 && echo "[backup] 不完全なスナップショットを削除しました: $partial_ids"
+  fi
+  restic forget --prune --keep-daily 7 --keep-weekly 2
 }
 
 # Discord Bot からの手動実行用: 1回だけバックアップして終了する（終了コードで成否を返す）

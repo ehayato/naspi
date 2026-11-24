@@ -30,23 +30,32 @@ async function deletePreviousPanels(CHANNEL) {
 }
 
 async function sendControlPanel(CHANNEL, ALLCMDs) {
-  const pannelCmds = Object.values(ALLCMDs).filter(cmd => cmd.data.button);
-  const buttons = pannelCmds.map(cmd => {
-    return new ButtonBuilder()
+  // 区分（main / dev）ごとに段を分ける。コマンドは区分と order の順に並んでいる
+  const groups = new Map();
+  for (const cmd of Object.values(ALLCMDs).filter(c => c.data.button)) {
+    const group = cmd.data.button.group ?? 'main';
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group).push(cmd);
+  }
+
+  const rows = [];
+  for (const cmds of groups.values()) {
+    const buttons = cmds.map(cmd => new ButtonBuilder()
       .setCustomId(`btn_${cmd.data.name}`)
       .setLabel(cmd.data.button.label || cmd.data.name)
       .setEmoji(cmd.data.button.emoji || '🔸')
-      .setStyle(ButtonStyle[cmd.data.button.style] || ButtonStyle.Primary);
-  });
+      .setStyle(ButtonStyle[cmd.data.button.style] || ButtonStyle.Primary));
 
-  const rows = [];
-  for (let i = 0; i < buttons.length; i += 5) {
-    rows.push(new ActionRowBuilder().addComponents(buttons.slice(i, i + 5)));
+    for (let i = 0; i < buttons.length; i += 5) {
+      rows.push(new ActionRowBuilder().addComponents(buttons.slice(i, i + 5)));
+    }
   }
 
   const embed = new CustomEmbedBuilder()
     .setTitle(PANEL_TITLE)
-    .setDescription('NASPIのコマンドをボタンで操作できます。')
+    .setDescription(groups.has('dev')
+      ? 'NASPIをボタンで操作できます。\n上段が通常の操作、下段が開発モード専用の手動操作です。'
+      : 'NASPIのコマンドをボタンで操作できます。')
     .setColor(COLORS.COCKPIT);
 
   embed.embedData.fields.push(

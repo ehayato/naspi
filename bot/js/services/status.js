@@ -11,7 +11,9 @@ const data = {
   button: {
     label: 'ステータス',
     emoji: '📊',
-    style: 'Primary'
+    style: 'Secondary',
+    group: 'main',
+    order: 10
   }
 }
 
@@ -135,5 +137,6 @@ async function service(interaction) {
 
 module.exports = {
   data,
-  service
+  service,
+  getStorageUsage
 };

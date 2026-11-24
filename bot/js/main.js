@@ -8,6 +8,7 @@ const COMMANDS = require('./core/commands');
 const { handleInteraction } = require('./core/interactionHandler');
 const HELLO = require('./core/services/hello');
 const CONTROL_PANEL = require('./core/services/controlPanel');
+const NOTIFIER = require('./core/services/notifier');
 
 function createClient() {
   return new Client({
@@ -39,6 +40,9 @@ function main() {
     if(CHANNELS.COCKPIT) {
       CONTROL_PANEL.service(CHANNELS.COCKPIT, COMMANDS);
     }
+
+    // 同期・バックアップの状態変化と日次レポートを CLOUD / BACKUP に通知する
+    NOTIFIER.start(CHANNELS);
   });
 
   client.on(Events.InteractionCreate, async (interaction) => {

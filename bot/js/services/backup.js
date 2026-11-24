@@ -7,7 +7,9 @@ const data = {
   button: {
     label: 'バックアップ',
     emoji: '💾',
-    style: 'Primary'
+    style: 'Primary',
+    group: 'main',
+    order: 40
   }
 }
 
