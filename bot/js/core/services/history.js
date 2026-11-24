@@ -5,10 +5,40 @@ const path = require('path');
 // 形式: 開始時刻(epoch秒)<TAB>auto|manual<TAB>終了コード<TAB>所要秒
 const HISTORY_DIR = process.env.HISTORY_DIR || '/history';
 
+// 実行時刻は、起動からの経過ではなく時計で決まる
+//   同期: intervalSec ごと（1800 なら毎時 00 分と 30 分。エポック秒の倍数）
+//   バックアップ: 毎日 dailyAt（HH:MM、日本時間）
+const DAILY_AT_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const backupTime = DAILY_AT_PATTERN.test(process.env.BACKUP_TIME ?? '') ? process.env.BACKUP_TIME : '03:15';
+
 const JOBS = {
   sync: { label: 'クラウド同期', emoji: '☁️', intervalSec: Number(process.env.SYNC_INTERVAL) || 1800 },
-  backup: { label: 'バックアップ', emoji: '💾', intervalSec: Number(process.env.BACKUP_INTERVAL) || 86400 }
+  backup: { label: 'バックアップ', emoji: '💾', dailyAt: backupTime }
 };
+
+const JST_OFFSET_MS = 9 * 3600 * 1000;
+const DAY_MS = 24 * 3600 * 1000;
+
+// 次回の実行予定時刻（ミリ秒）
+function nextScheduledTime(job, now = Date.now()) {
+  const { intervalSec, dailyAt } = JOBS[job];
+  if (dailyAt) {
+    const [h, m] = dailyAt.split(':').map(Number);
+    const jstNow = now + JST_OFFSET_MS;
+    let target = Math.floor(jstNow / DAY_MS) * DAY_MS + (h * 60 + m) * 60 * 1000;
+    if (target <= jstNow) target += DAY_MS;
+    return target - JST_OFFSET_MS;
+  }
+  const intervalMs = intervalSec * 1000;
+  return (Math.floor(now / intervalMs) + 1) * intervalMs;
+}
+
+// 実行間隔・時刻の説明（例: 「30分ごと（毎時 00 分・30 分）」「毎日 03:15」）
+function describeSchedule(job) {
+  const { intervalSec, dailyAt } = JOBS[job];
+  if (dailyAt) return `毎日 ${dailyAt}`;
+  return `${formatSpan(intervalSec * 1000)}ごと`;
+}
 
 async function readHistory(job) {
   let raw;
@@ -74,17 +104,13 @@ function describeRun(run, now = Date.now()) {
   return `${run.ok ? '✅' : '❌'} ${formatDateTime(run.start)} (${formatSpan(now - run.start)}前・${trigger}・${formatSeconds(run.duration)}${result})`;
 }
 
-// 次回の自動実行の目安（ループは「前回の終了＋間隔」で次を実行する）
-function describeNextRun(job, runs, now = Date.now()) {
-  const lastAuto = runs.filter(r => r.auto).at(-1);
-  if (!lastAuto) return null;
-
-  const next = lastAuto.start.getTime() + lastAuto.duration * 1000 + JOBS[job].intervalSec * 1000;
-  if (next < now) return '予定を過ぎています（実行中、またはコンテナが停止している可能性があります）';
+// 次回の自動実行の予定（固定の時刻に実行される）
+function describeNextRun(job, _runs, now = Date.now()) {
+  const next = nextScheduledTime(job, now);
   // 日付をまたぐ場合は日付も添える
   const nextDate = new Date(next);
   const at = formatDay(nextDate) === formatDay(new Date(now)) ? formatTime(nextDate) : formatDateTime(nextDate);
-  return `${at}頃 (${formatSpan(next - now)}後)`;
+  return `${at} (${formatSpan(next - now)}後)`;
 }
 
 module.exports = {
@@ -94,5 +120,7 @@ module.exports = {
   formatDay,
   formatDateTime,
   describeRun,
-  describeNextRun
+  describeNextRun,
+  describeSchedule,
+  nextScheduledTime
 };

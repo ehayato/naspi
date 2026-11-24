@@ -19,8 +19,8 @@ services:
       - DEV_CH_LOG=${DEV_CH_LOG}
       - DEV_CH_TEST=${DEV_CH_TEST}
       # /status の次回実行予定の算出用
-      - SYNC_INTERVAL=${SYNC_INTERVAL}
-      - BACKUP_INTERVAL=${BACKUP_INTERVAL}
+      - SYNC_INTERVAL=${SYNC_INTERVAL:-1800}
+      - BACKUP_TIME=${BACKUP_TIME:-03:15}
       # 本番チャンネル
       - PROD_CH_COCKPIT=${PROD_CH_COCKPIT}
       - PROD_CH_STATUS=${PROD_CH_STATUS}
@@ -77,7 +77,7 @@ services:
       - RCLONE_CONFIG=${RCLONE_CONFIG}
       - RCLONE_CACHE_DIR=/config/rclone/cache
       - RCLONE_REMOTE=${RCLONE_REMOTE}
-      - SYNC_INTERVAL=${SYNC_INTERVAL}
+      - SYNC_INTERVAL=${SYNC_INTERVAL:-1800}
     volumes:
       # rshared: コンテナ内のマウントをホストとSambaに伝播させる
       - ${DATA_CLOUD}:/data:rshared
@@ -97,7 +97,7 @@ services:
       - TZ=Asia/Tokyo
       - NODE_ENV=${NODE_ENV}
       - RESTIC_PASSWORD=${RESTIC_PASSWORD}
-      - BACKUP_INTERVAL=${BACKUP_INTERVAL}
+      - BACKUP_TIME=${BACKUP_TIME:-03:15}
     volumes:
       - ${DATA_CLOUD}:/data:ro
       - ${DATA_HDD}:/backup
