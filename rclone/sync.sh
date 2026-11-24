@@ -129,6 +129,8 @@ run_mount() {
   exit "$rc"
 }
 
+# --max-delete 20: 片側の20%を超えるファイルが消える同期は、安全のため止める（既定は50%）。
+# 止まったときは内容を確認し、問題なければ手動で --force を付けて実行する
 run_bisync() {
   rclone bisync "$LOCAL_DIR" "$REMOTE" \
     --workdir "$WORKDIR" \
@@ -137,6 +139,7 @@ run_bisync() {
     --resilient \
     --recover \
     --max-lock 2m \
+    --max-delete 20 \
     --conflict-resolve newer \
     --protondrive-replace-existing-draft \
     --log-level INFO \
