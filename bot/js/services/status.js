@@ -3,7 +3,7 @@ const os = require('os');
 const fs = require('fs/promises');
 const { CustomEmbedBuilder } = require('../core/embedBuilder');
 const { isDev, COLORS } = require('../core/constants');
-const { JOBS, readHistory, describeRun, describeNextRun } = require('../core/services/history');
+const { JOBS, readHistory, describeRun, describeNextRun, describeSchedule } = require('../core/services/history');
 
 const data = {
   name: 'status',
@@ -89,11 +89,8 @@ async function getJobStatus(job) {
   }
 
   const runs = await readHistory(job);
-  if (runs.length === 0) return { name, value: '実行記録がありません', inline: false };
-
-  const lines = [`最終: ${describeRun(runs.at(-1))}`];
-  const next = describeNextRun(job, runs);
-  if (next) lines.push(`次回: ${next}`);
+  const lines = [runs.length === 0 ? '最終: 実行記録がありません' : `最終: ${describeRun(runs.at(-1))}`];
+  lines.push(`次回: ${describeNextRun(job, runs)}（${describeSchedule(job)}）`);
   return { name, value: lines.join('\n'), inline: false };
 }
 

@@ -15,6 +15,20 @@ WORKDIR="/config/rclone/bisync"
 HISTORY_DIR="${HISTORY_DIR:-/history}"
 HISTORY_MAX_LINES=1000
 
+# 同期とバックアップが同時に動かないよう、実行中は /history に印のファイルを置く
+# （バックアップ中は同期を見送り、同期中はバックアップが終わるのを待つ）
+SYNC_LOCK="$HISTORY_DIR/sync.lock"
+BACKUP_LOCK="$HISTORY_DIR/backup.lock"
+SYNC_LOCK_MAX_AGE=7200      # これより古い印は、異常終了の名残とみなす
+BACKUP_LOCK_MAX_AGE=21600
+BUSY_EXIT=5                 # バックアップ中のため、同期を見送った
+
+# 印のファイルがあり、かつ古すぎない（実行中とみなせる）か
+lock_active() {
+  [ -f "$1" ] || return 1
+  [ $(( $(date +%s) - $(stat -c %Y "$1" 2>/dev/null || echo 0) )) -lt "$2" ]
+}
+
 run_recorded() {
   trigger="$1"
   shift
@@ -115,6 +129,8 @@ run_mount() {
   exit "$rc"
 }
 
+# --max-delete 50: 片側の50%を超えるファイルが消える同期は、安全のため止める（rclone の既定と同じ）。
+# 止まったときは内容を確認し、問題なければ手動で --force を付けて実行する
 run_bisync() {
   rclone bisync "$LOCAL_DIR" "$REMOTE" \
     --workdir "$WORKDIR" \
@@ -123,6 +139,7 @@ run_bisync() {
     --resilient \
     --recover \
     --max-lock 2m \
+    --max-delete 50 \
     --conflict-resolve newer \
     --protondrive-replace-existing-draft \
     --log-level INFO \
@@ -167,8 +184,15 @@ mkdir -p "$WORKDIR"
 
 # 同期を1回実行し、履歴と認証エラーの状態を更新する
 sync_cycle() {
+  if lock_active "$BACKUP_LOCK" "$BACKUP_LOCK_MAX_AGE"; then
+    echo "[sync] バックアップ実行中のため、同期を見送ります"
+    return "$BUSY_EXIT"
+  fi
+
+  touch "$SYNC_LOCK" 2>/dev/null
   run_recorded "$1" sync_once
   rc=$?
+  rm -f "$SYNC_LOCK" 2>/dev/null
   if [ "$rc" -eq 0 ]; then
     clear_auth_error
   elif [ "$rc" -ne "$AUTH_ERROR_EXIT" ] && has_auth_error "$HISTORY_DIR/sync.last.log"; then
@@ -183,7 +207,13 @@ if [ "${1:-}" = "once" ]; then
   exit $?
 fi
 
+# コンテナの起動時点では、同期もバックアップも動いていない。前回の異常終了で残った印は消す
+rm -f "$SYNC_LOCK" 2>/dev/null
+
+# 起動からの経過ではなく、時計に合わせて実行する（INTERVAL=1800 なら毎時 00 分と 30 分）。
+# 実行時刻がずれないよう、実行にかかった時間を差し引いて次の時刻まで待つ
+echo "[sync] ${INTERVAL}秒ごとに、時計に合わせて実行します"
 while true; do
+  sleep $(( INTERVAL - $(date +%s) % INTERVAL ))
   sync_cycle auto
-  sleep "$INTERVAL"
 done

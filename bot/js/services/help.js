@@ -1,5 +1,6 @@
 const { CustomEmbedBuilder } = require('../core/embedBuilder');
 const { COLORS } = require('../core/constants');
+const { describeSchedule } = require('../core/services/history');
 
 const data = {
   name: 'help',
@@ -54,6 +55,14 @@ async function service(interaction, allCommands, CHANNELS) {
         `${mention(CHANNELS, 'LOG')}: Bot のエラーログ`,
         `${mention(CHANNELS, 'STATUS')}: Bot の起動通知`,
         `${mention(CHANNELS, 'COCKPIT')}: コントロールパネル`
+      ].join('\n')
+    },
+    {
+      name: '⏰ 自動実行の時刻',
+      value: [
+        `**同期**: ${describeSchedule('sync')}（毎時 00 分と 30 分）`,
+        `**バックアップ**: ${describeSchedule('backup')}`,
+        '同期とバックアップは同時に動きません。バックアップ中は同期を見送り、同期中はバックアップが終わるのを待ちます。'
       ].join('\n')
     },
     {
