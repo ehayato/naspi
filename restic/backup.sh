@@ -60,7 +60,7 @@ backup_once() {
     id=$(restic snapshots --path "$SOURCE_DIR" --latest 1 --json 2>/dev/null |
       grep -o '"short_id":"[0-9a-f]*"' | tail -1 | cut -d'"' -f4)
     if [ -n "$id" ] && restic tag --add partial "$id" >/dev/null 2>&1; then
-      echo "[backup] 一部のファイルを読めませんでした。スナップショット $id に partial タグを付けました"
+      echo "[backup] 一部のファイルを読めませんでした。スナップショットに partial タグを付けました"
     fi
     return 3
   elif [ "$rc" -ne 0 ]; then
@@ -68,7 +68,12 @@ backup_once() {
   fi
 
   # 完全なスナップショットが取れたので、過去の不完全なもの(partial)を削除してから世代を整理する
-  restic forget --tag partial >/dev/null 2>&1
+  # （forget は --tag だけでは何も削除しないため、ID を取得して指定する）
+  partial_ids=$(restic snapshots --tag partial --json 2>/dev/null | grep -o '"short_id":"[0-9a-f]*"' | cut -d'"' -f4)
+  if [ -n "$partial_ids" ]; then
+    # shellcheck disable=SC2086
+    restic forget $partial_ids >/dev/null 2>&1 && echo "[backup] 不完全なスナップショットを削除しました: $partial_ids"
+  fi
   restic forget --prune --keep-daily 7 --keep-weekly 2
 }
 
